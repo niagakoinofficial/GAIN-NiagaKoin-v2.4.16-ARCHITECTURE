@@ -1,0 +1,135 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.admin == true;
+    }
+    function safeProfileFields() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'username', 'emailMasked', 'preferences', 'updatedAt'
+      ]);
+    }
+    function safeCreateProfile() {
+      return request.resource.data.keys().hasOnly([
+        'id','username','email','memberId','accountStatus','sponsorId','sponsorName','createdAt','updatedAt','emailVerified'
+      ])
+      && request.resource.data.id == request.auth.uid
+      && request.resource.data.memberId is string
+      && request.resource.data.memberId.matches('GN-[0-9]{5}');
+    }
+    function publicMemberFields() {
+      return request.resource.data.keys().hasOnly([
+        'memberId','userId','username','accountStatus','emailMasked','sponsorId','sponsorName','joinedAt'
+      ]);
+    }
+
+    match /{document=**} { allow read, write: if false; }
+
+    match /test/{docId} { allow read: if false; allow write: if false; }
+
+    // Backend is the only writer of financial state. Admin SDK writes bypass rules.
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && safeCreateProfile();
+      allow update: if isOwner(userId) && safeProfileFields();
+      allow delete: if isAdmin();
+
+      match /positions/{positionId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if false;
+      }
+      match /transactions/{transactionId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if false;
+      }
+      match /trade_history/{tradeId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if false;
+      }
+      match /network/{networkId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if false;
+      }
+      match /price_alerts/{alertId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId)
+          && request.resource.data.keys().hasOnly([
+            'id','userId','symbol','coin','targetPrice','condition','initialPrice','status',
+            'createdAt','triggeredAt','triggeredPrice','note','isRepeating','notificationSent'
+          ])
+          && request.resource.data.userId == userId
+          && request.resource.data.id == alertId
+          && request.resource.data.symbol is string
+          && request.resource.data.symbol.matches('[A-Z0-9]{2,20}/USDT')
+          && request.resource.data.coin is string
+          && request.resource.data.targetPrice is number
+          && request.resource.data.targetPrice > 0
+          && request.resource.data.condition in ['above','below']
+          && request.resource.data.status in ['active','triggered','disabled'];
+        allow update: if isOwner(userId)
+          && request.resource.data.userId == userId
+          && request.resource.data.id == alertId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'userId','symbol','coin','targetPrice','condition','initialPrice','status',
+            'createdAt','triggeredAt','triggeredPrice','note','isRepeating','notificationSent'
+          ])
+          && request.resource.data.symbol is string
+          && request.resource.data.symbol.matches('[A-Z0-9]{2,20}/USDT')
+          && request.resource.data.targetPrice is number
+          && request.resource.data.targetPrice > 0
+          && request.resource.data.condition in ['above','below']
+          && request.resource.data.status in ['active','triggered','disabled'];
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+      match /wallet_ledger/{entryId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if false;
+      }
+      match /botRunners/{runnerId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if false;
+      }
+      match /botOrders/{orderId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if false;
+      }
+      match /botLogs/{logId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if false;
+      }
+      match /botLocks/{lockId} {
+        allow get: if isOwner(userId) || isAdmin();
+        allow list, create, update, delete: if false;
+      }
+      match /botCredentials/{exchange} {
+        allow read, write: if false;
+      }
+    }
+
+    match /member_directory/{memberId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      // Authoritative directory writes are server-only. Client may read its own member and resolve sponsor IDs, but cannot create forged referral relationships.
+      allow create: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /member_id_reservations/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+    match /member_id_index/{memberId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+    match /system/member_id_counter { allow read, write: if false; }
+  }
+}

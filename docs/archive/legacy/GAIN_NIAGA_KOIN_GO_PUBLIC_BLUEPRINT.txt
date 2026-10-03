@@ -1,0 +1,687 @@
+
+GAIN NIAGA KOIN - GO PUBLIC READINESS MASTER BLUEPRINT
+
+TUJUAN DOKUMEN
+
+Dokumen ini adalah blueprint perbaikan menyeluruh berdasarkan hasil audit source code yang telah diperiksa.
+Fokus utama bukan sekadar memperbaiki bug, tetapi memastikan aplikasi layak digunakan publik, aman,
+mudah dipelihara, mudah dikembangkan, dan siap bertumbuh tanpa menciptakan technical debt besar.
+
+CATATAN PENTING
+
+Semua poin di bawah dibagi menjadi:
+
+- Fakta yang ditemukan dari source code.
+- Risiko yang muncul.
+- Target kondisi production.
+- Langkah implementasi detail.
+
+=====================================================================
+FASE 1 - CRITICAL BLOCKER (WAJIB SEBELUM GO PUBLIC)
+=====================================================================
+
+1. FIRESTORE SECURITY RULES HARDENING
+
+Fakta:
+- Aplikasi menggunakan Firestore sebagai database utama.
+- Firestore Rules menjadi lapisan keamanan paling kritis.
+- Belum dapat diverifikasi bahwa seluruh collection telah menggunakan ownership validation yang ketat.
+
+Risiko:
+- User membaca data user lain.
+- User mengubah saldo user lain.
+- User memanipulasi transaksi.
+- User mengakses data admin.
+
+Target:
+- Setiap dokumen hanya dapat diakses pemiliknya.
+- Semua operasi sensitif divalidasi server.
+- Admin memiliki hak akses berbasis role.
+
+Langkah Implementasi:
+
+1. Audit seluruh collection.
+2. Audit seluruh subcollection.
+3. Identifikasi collection sensitif.
+4. Terapkan ownership validation.
+5. Terapkan role validation.
+6. Pisahkan rule admin dan user.
+7. Blok seluruh write operation yang tidak tervalidasi.
+8. Audit seluruh query lintas user.
+9. Buat testing rule otomatis.
+10. Dokumentasikan seluruh akses collection.
+
+=====================================================================
+
+2. ADMIN AUTHORIZATION REFACTOR
+
+Fakta:
+- Ditemukan indikasi admin berbasis email list.
+
+Risiko:
+- Hak akses tidak scalable.
+- Sulit dikelola.
+- Berpotensi terjadi privilege escalation.
+
+Target:
+- Role Based Access Control.
+
+Struktur Role:
+
+SUPER_ADMIN
+ADMIN
+SUPPORT
+MEMBER
+
+Langkah Implementasi:
+
+1. Hapus adminEmails.
+2. Gunakan Firebase Custom Claims.
+3. Buat middleware validasi role.
+4. Buat role guard.
+5. Audit seluruh halaman admin.
+6. Audit seluruh action admin.
+7. Tambahkan audit trail admin.
+8. Tambahkan logging admin activity.
+
+=====================================================================
+
+3. HAPUS LOCALSTORAGE SEBAGAI SUMBER DATA UTAMA
+
+Fakta:
+- Wallet.
+- Transaction.
+- Position.
+
+Masih memiliki ketergantungan localStorage.
+
+Risiko:
+
+- Data berbeda antar device.
+- Data hilang saat clear browser.
+- Data dapat dimanipulasi.
+
+Target:
+
+Firestore = Source of Truth
+LocalStorage = Cache Sementara
+
+Langkah:
+
+1. Cari seluruh localStorage usage.
+2. Kelompokkan berdasarkan fungsi.
+3. Pindahkan source utama ke Firestore.
+4. Gunakan cache hanya untuk UX.
+5. Tambahkan invalidation cache.
+6. Tambahkan sync mechanism.
+7. Tambahkan fallback recovery.
+
+=====================================================================
+
+4. PEMISAHAN DEMO MODE DAN PRODUCTION MODE
+
+Fakta:
+
+Ditemukan:
+- mockData
+- initialWallet
+- initialTransaction
+- initialPosition
+
+Risiko:
+
+User production melihat data simulasi.
+
+Target:
+
+Demo dan production benar-benar terpisah.
+
+Langkah:
+
+1. Buat folder demo.
+2. Buat folder production.
+3. Tambahkan feature flag.
+4. Tambahkan environment mode.
+5. Blok demo build masuk production.
+6. Audit seluruh import mockData.
+7. Audit seluruh fallback data.
+8. Tambahkan automated verification.
+
+=====================================================================
+
+5. WALLET LEDGER SYSTEM
+
+Fakta:
+
+Model wallet saat ini belum menunjukkan ledger finansial immutable.
+
+Risiko:
+
+- Sulit audit.
+- Sulit recovery.
+- Sulit investigasi dispute.
+
+Target:
+
+Ledger-based architecture.
+
+Setiap perubahan saldo wajib menghasilkan record ledger baru.
+
+Langkah:
+
+1. Buat collection wallet_ledger.
+2. Simpan balance_before.
+3. Simpan balance_after.
+4. Simpan reference transaction.
+5. Simpan actor.
+6. Simpan timestamp.
+7. Simpan source action.
+8. Buat immutable record.
+9. Larang update ledger lama.
+10. Buat reconciliation process.
+
+=====================================================================
+
+6. SERVER SIDE VALIDATION
+
+Target:
+
+Seluruh request tervalidasi sebelum diproses.
+
+Audit:
+
+- Deposit
+- Withdraw
+- Transfer
+- Referral
+- Trade
+- Profile
+
+Langkah:
+
+1. Tambahkan validation layer.
+2. Buat schema validation.
+3. Validasi payload.
+4. Validasi numeric value.
+5. Validasi ownership.
+6. Validasi role.
+7. Validasi business rule.
+8. Tambahkan sanitization.
+
+=====================================================================
+FASE 2 - PRODUCTION READINESS
+=====================================================================
+
+7. AUTHENTICATION HARDENING
+
+Audit:
+
+- Login
+- Register
+- Google Login
+- Verification
+- 2FA
+
+Tambahkan:
+
+- Session validation
+- Device tracking
+- Login history
+- Suspicious login detection
+- Token refresh validation
+
+=====================================================================
+
+8. EXCHANGE INTEGRATION HARDENING
+
+Audit seluruh integrasi CCXT.
+
+Pastikan:
+
+- Retry mechanism
+- Timeout
+- Error fallback
+- Circuit breaker
+- Rate limiting
+- Exchange outage handling
+
+=====================================================================
+
+9. SECRET MANAGEMENT
+
+Audit:
+
+- API key
+- Exchange key
+- Firebase config
+- SMTP
+- Resend
+- Gemini
+
+Target:
+
+Tidak ada secret sensitif di frontend.
+
+Catatan status implementasi:
+
+- Kredensial exchange saat ini tidak disimpan di localStorage atau sessionStorage, tetapi masih dimasukkan melalui browser dan dikirim ke server dalam request.
+- Kredensial tetap dapat diakses di browser selama sesi berjalan, sehingga target tidak ada secret sensitif di frontend belum sepenuhnya tercapai.
+- Penyelesaian memerlukan vault kredensial di backend yang terikat pada autentikasi pengguna, validasi Firebase ID token di server, serta enkripsi dengan kunci yang dikelola server atau KMS.
+- Sebelum vault tersedia, jangan menganggap kredensial exchange aman dari akses frontend atau menyatakan secret management production sudah tuntas.
+
+=====================================================================
+
+10. CENTRALIZED ERROR HANDLING
+
+Target:
+
+Semua error melalui satu pipeline.
+
+Tambahkan:
+
+- Error code
+- Error category
+- Error logging
+- User friendly message
+
+Catatan status implementasi:
+
+- Error middleware Express terdaftar setelah seluruh route API dan middleware Vite/production.
+- Error API menggunakan format terpusat dengan success, error, code, category, dan requestId.
+- Error dicatat dengan requestId, metode, path, status, kode, kategori, dan pesan yang disanitasi; payload request dan kredensial tidak dicatat.
+- Pesan untuk pengguna dibedakan untuk validasi, rate limit, kegagalan autentikasi exchange, gangguan exchange, dan error internal.
+- Error tak tertangani dan route API yang tidak ditemukan diarahkan ke pipeline yang sama.
+
+=====================================================================
+FASE 3 - FRONTEND REFACTOR
+=====================================================================
+
+11. ROUTING REFACTOR
+
+Audit:
+
+currentRoute
+setCurrentRoute
+
+Target:
+
+React Router.
+
+Tambahkan:
+
+- Protected route
+- Role route
+- Lazy loading
+- Error boundary
+
+Catatan status implementasi:
+
+- Navigasi utama menggunakan React Router pada path home, wallet, bot, trading, akun, dan admin.
+- Route dashboard menggunakan auth guard dan menolak user placeholder demo di production; route admin memeriksa role admin.
+- View utama dimuat secara lazy dan aplikasi memiliki error boundary untuk kegagalan render.
+
+=====================================================================
+
+12. STATE MANAGEMENT REFACTOR
+
+Audit:
+
+- useState
+- useEffect
+- Context
+
+Target:
+
+- Zustand
+- TanStack Query
+
+Pisahkan:
+
+UI State
+Server State
+Session State
+
+Catatan status implementasi:
+
+- Zustand hanya mengelola state UI modal; session tetap berada di AuthContext.
+- Cache server per user untuk wallet, posisi, transaksi, trade, price alert, dan ticker menggunakan TanStack Query.
+- Listener Firestore realtime memperbarui query cache; Firestore tetap menjadi sumber kebenaran dan cache tidak dipersist ke browser oleh Zustand.
+
+=====================================================================
+
+13. API LAYER STANDARDIZATION
+
+Target Struktur:
+
+api/
+services/
+repositories/
+
+Pisahkan:
+
+Presentation Layer
+Business Layer
+Data Layer
+
+Catatan status implementasi:
+
+- Transport HTTP dan normalisasi error berada di src/api; alur exchange, wallet, bot, dan auth menggunakan service di src/services.
+- Akses data Firebase UI/Auth melewati src/repositories/userRepository.ts; implementasi Firestore lama tetap berada di firebaseService.ts di balik facade repository ini.
+- Pemanggilan fetch API langsung dari komponen telah dihapus. Orkestrasi workflow UI dan sebagian business logic tetap berada di App.tsx dan dapat diekstrak lebih lanjut tanpa mengubah kontrak API.
+- View dan modal dimuat secara lazy; chunk Firebase dipecah dengan batas 400 KB. Production build berhasil tanpa warning ukuran chunk.
+
+=====================================================================
+FASE 4 - DATABASE REVIEW
+=====================================================================
+
+Audit Collection:
+
+users
+transactions
+positions
+trade_history
+network
+member_directory
+
+Audit:
+
+- Query pattern
+- Indexing
+- Read frequency
+- Write frequency
+- Data duplication
+
+
+Catatan status implementasi:
+
+- Pola baca awal menggunakan listener seluruh positions, transactions, trade_history, price_alerts, dan getDocs seluruh network/positions. Listener transaksi dan trade sekarang dibatasi 50 dokumen terbaru; histori dapat dimuat per halaman dengan startAfter cursor.
+- Network memakai cursor per 25 dokumen dan UID Firebase yang benar. Operasi maintenance positions membaca batch cursor 100 dokumen per request.
+- firebase.json menghubungkan firestore.rules dan firestore.indexes.json. Manifest menyiapkan composite index untuk filter tipe/tanggal transaksi, simbol/side/timestamp trade, status/tanggal positions dan network, serta status/tanggal price alerts.
+- Firestore tidak memerlukan composite index untuk query cursor sederhana yang hanya memakai satu orderBy; index komposit disediakan bagi pola filter server-side.
+- Query transaksi berurut createdAt; dokumen transaksi legacy tanpa createdAt harus di-backfill sebelum perubahan dipasang pada database lama.
+- Listener positions dan price_alerts tetap membaca seluruh dokumen agar bot dan price alert tidak kehilangan item; pindahkan UI ke halaman/virtualisasi sebelum memberi batas query.
+- Rules wildcard dihapus. member_directory tidak dapat di-list dan hanya menerima data publik; email penuh, saldo, role, dan alamat deposit dibersihkan dari dokumen saat profil disinkronkan.
+- wallet_ledger tidak dapat ditulis client. Penulisan lama dari client dihapus karena balanceBefore/balanceAfter dibuat tanpa saldo otoritatif; buat endpoint backend transaksi ledger sebelum mengaktifkan ledger finansial.
+- Owner masih dapat mengubah field saldo pada dokumen users; mutasi saldo wajib dipindahkan ke backend tepercaya sebelum go-public.
+- Firebase CLI/emulator tidak tersedia di workspace ini. JSON manifest lolos parse dan TypeScript/build lolos, tetapi rules belum diuji dengan emulator dan indexes belum dideploy.
+
+Catatan status implementasi:
+
+- Firestore rules tidak lagi memakai wildcard subcollection di bawah users; akses dibatasi ke positions, transactions, trade_history, network, price_alerts, dan wallet_ledger.
+- member_directory hanya dapat dibaca per dokumen oleh user terautentikasi, tidak dapat di-list, dan hanya menerima field publik yang diizinkan. PII/saldo/alamat lama dihapus saat profil disinkronkan.
+- wallet_ledger kini read-only dari client. Penulisan ledger harus dipindahkan ke backend tepercaya karena client tidak dapat dipercaya untuk menyatakan balanceBefore/balanceAfter.
+- Listener transaksi dan trade mengambil 50 dokumen terbaru; tombol load-more memakai startAfter cursor. Referral network memakai cursor berdasarkan document ID. Pemindaian maintenance positions berjalan per 100 dokumen.
+- firestore.indexes.json mencatat index komposit untuk transaksi, trade, posisi, network, dan price alert; firebase.json menghubungkan rules dan index manifest.
+- Dokumen transaksi legacy tanpa createdAt perlu dimigrasikan sebelum query berurut createdAt dipakai pada project yang sudah berisi data lama.
+- Listener positions dan price_alerts tetap memuat semua dokumen karena UI trading dan pemeriksaan alert bergantung pada seluruh koleksi; paginasi UI/virtualisasi diperlukan sebelum membatasi keduanya.
+- Rules masih mengizinkan owner mengubah field saldo pada users/{userId}; mutasi saldo harus dipindahkan ke backend sebelum go-public.
+- Firebase CLI/emulator tidak tersedia di workspace ini, sehingga rules/indexes belum diuji atau dideploy ke project Firebase.
+
+=====================================================================
+FASE 5 - OBSERVABILITY
+=====================================================================
+
+Tambahkan:
+
+Application Monitoring
+Error Monitoring
+Performance Monitoring
+Audit Logging
+
+Log yang wajib:
+
+- Login
+- Logout
+- Deposit
+- Withdraw
+- Transfer
+- Admin Action
+- Permission Change
+- Exchange Error
+
+Catatan status implementasi:
+
+- GET /api/health mengembalikan status, uptime, jumlah request, failure, slow request, dan rata-rata latency.
+- Server mencatat request API lambat/gagal dengan requestId, route template, status, dan durasi; GET /api/health memberi uptime serta agregat request/failure/latency.
+- Error API, retry exchange, dan aksi server-observed mengeluarkan structured logs. Aksi transfer, deposit, withdrawal, aktivasi, exchange order, dan bot lifecycle dicatat tanpa API secret, OTP, alamat, TXID, atau user PII.
+- Client mengirim event login/logout, perubahan 2FA, aksi wallet/admin, render error, dan Web Vitals (CLS, FCP, INP, LCP, TTFB) melalui endpoint allowlist. Attribute disaring server-side; payload sensitif dan Web Vital ID tidak dicatat.
+- Event dari browser ditandai untrusted_client_report; aksi server juga server_observed_unverified karena API belum memvalidasi Firebase ID token. Log ini berguna untuk observability tetapi belum merupakan audit finansial/administratif yang otoritatif.
+- Firestore error logging tidak lagi mencatat email, provider info, atau user ID mentah.
+- Log saat ini dikirim ke stdout/stderr. Retensi, alerting, dashboard, dan integrasi layanan eksternal (mis. Sentry/Cloud Logging) memerlukan konfigurasi deployment.
+
+=====================================================================
+FASE 6 - LOCALHOST = PRODUCTION
+=====================================================================
+
+Checklist wajib:
+
+Environment Variables
+Firebase Config
+Authorized Domains
+Firestore Rules
+Storage Rules
+API Endpoint
+SMTP
+Resend
+Exchange Config
+
+Buat:
+
+README_SETUP.md
+
+Harus menjelaskan:
+
+1. Install.
+2. Environment.
+3. Firebase setup.
+4. Firestore setup.
+5. Emulator setup.
+6. Local build.
+7. Production build.
+8. Troubleshooting.
+
+=====================================================================
+FASE 7 - SECURITY AUDIT
+=====================================================================
+
+Audit:
+
+Authentication
+Authorization
+Input Validation
+Output Validation
+API Security
+Firestore Rules
+Storage Rules
+Session Security
+XSS
+CSRF
+Rate Limit
+Secrets
+
+Catatan status implementasi:
+
+- Server menambahkan header keamanan: CSP, HSTS, Permissions-Policy, X-Frame-Options, X-Content-Type-Options, no-store, dan allowlist CORS untuk localhost.
+- Endpoint state-changing memeriksa Origin/Referer untuk mencegah request lintas-origin yang tidak diizinkan, serta membatasi request body maksimal 100 KB.
+- Aplikasi tidak lagi menyimpan email pengguna pada objek sesi lokal untuk mengurangi exposure PII di localStorage.
+- Firestore rules tetap memegang ownership guard; setiap subcollection mewajibkan `request.auth.uid == userId` atau `resource.data.userId == request.auth.uid`.
+- Error logger Firestore dan observability telah dibersihkan dari email, token, provider info, dan field sensitif lainnya.
+- Audit ini belum menggantikan penilaian keamanan penuh dengan Firebase Emulator, namun sudah mengurangi risiko paling kritis sebelum go-live.
+
+=====================================================================
+FASE 8 - SCALABILITY
+=====================================================================
+
+Target capaian: desain sistem yang tetap stabil saat jumlah pengguna naik, tanpa menurunkan CSAT atau mengorbankan keamanan dan akurasi ledger.
+
+100 USER
+
+Target:
+- Semua fitur stabil.
+- Tidak ada regressi pada login, wallet, trade history, referral, bot engine, atau observability.
+
+Kebutuhan:
+- Single Node / single instance aplikasi Express + Vite.
+- Firestore read/write masih bersifat per-user.
+- Endpoint health, rate limit, dan dashboard error sudah aktif.
+- Monitoring dasar terhadap latency endpoint, 5xx rate, dan bot polling fallback.
+
+Checklist:
+- Validasi semua fitur pokok manual.
+- Pastikan query riwayat menghindari `getDocs` full collection.
+- Pastikan bot engine tetap mengurangi burst CPU dengan interval scheduler yang dapat dikontrol.
+
+1000 USER
+
+Target:
+- Peningkatan load secara bertahap tanpa terjadinya spike error.
+- Observability siap mendeteksi bottleneck di API / Firestore / bot engine.
+
+Tambahkan:
+- Monitoring lebih baik: request latency, Firestore read count, 5xx rate, bot engine queue depth.
+- Redis cache untuk ticker data cepat, market snapshot, dan rate-limit counter.
+- Per-user session cache ring buffer di aplikasi backend.
+- Debounce / coalesce query market dan trade summary.
+- Batasi polling bot per-user: scheduler bukan lagi client polling penuh.
+
+Checklist:
+- Log request API dipisahkan by route dan status.
+- Firestore read/write per query dibatasi maksimal 1 batch per request.
+- Bot engine tidak lagi mengandalkan in-memory polling yang terlalu banyak untuk semua user.
+
+10000 USER
+
+Target:
+- Aplikasi dapat menangani traffic concurrent yang lebih tinggi.
+- Tidak ada bottleneck pada single process backend.
+
+Tambahkan:
+- Redis untuk cache hot data, session, dan rate limiting.
+- Cache Strategy:
+  - TTL 15-30 detik untuk market snapshot.
+  - TTL 60 detik untuk portfolio summary.
+  - TTL 5-10 menit untuk data referral tree yang jarang berubah.
+- Background Worker untuk bot engine, exchange sync, dan rebalancing.
+- Queue System: job berdasar order/market per user.
+- Firestore query optimization: pagination, index exact match, batch write terbatas.
+- Worker memindahkan operasi yang tidak perlu dari request thread.
+
+Checklist:
+- Bot engine dipisah dari web API process.
+- Exchange jobs masuk queue dengan retry backoff.
+- Protected API tidak lagi membaca data terlalu banyak dari UI layer.
+
+50000 USER
+
+Target:
+- Aplikasi mulai tampak sebagai sistem multi-service.
+- Semua fungsi penting sudah terbagi antara API, worker, scheduler, dan storage.
+
+Tambahkan:
+- Background Worker per-user bot execution.
+- Queue System: BullMQ / Redis queue, DLQ, retry policy, dead-letter logs.
+- Event-driven architecture untuk order created / wallet updated / trade settled.
+- Scheduler job yang ditulis ke durable queue, bukan langsung diproses inline.
+- Separasi Bounded Context:
+  - Auth & Session
+  - Wallet & Ledger
+  - Bot Execution
+  - Market Data
+  - Notification & Audit
+- Log aggregation ke centralized system: Cloud Logging / Sentry / Datadog.
+
+Checklist:
+- Semua mutasi finansial melalui backend trusted service.
+- Ledger transaksi masuk ke sistem append-only yang terpisah dari read-model UI.
+- Pekerjaan bot tidak lagi memblokir endpoint API utama.
+
+100000 USER
+
+Target:
+- Sistem siap untuk traffic skala besar dan kompleksitas operasional tinggi.
+
+Evaluasi:
+- PostgreSQL sebagai sumber truth ledger dan transaksi finansial.
+- Firestore hanya untuk realtime user session / ringan sync / cache tertentu.
+- Event Driven Architecture: producer-consumer pattern antar service.
+- Dedicated Backend Services:
+  - Auth service
+  - Wallet/ledger service
+  - Bot execution service
+  - Notification service
+  - Market data service
+  - Admin audit service
+- Redis cluster untuk cache dan queue.
+- Database sharding / partitioning untuk kebutuhan merchant / portfolio / user event.
+- Background workers dipisah ke worker pool dengan autoscaling.
+- Observability yang lengkap: SLI/SLO, distributed tracing, error budget, alerting.
+
+Checklist:
+- Ledger harus dipindah ke backend authoritative system.
+- Firestore bukan lagi source of truth utama untuk transaksi keuangan.
+- Perubahan status bot, order, settlement, dan withdrawal dikelola lewat event stream.
+- Setiap operasi kritis memiliki idempotency key dan audit trail.
+
+Kesimpulan:
+- Saat ini project cocok untuk scale 100-1000 user dengan penguatan observability dan queueing dasar.
+- Untuk 10.000+ user diperlukan Redis + worker queue + backend separation.
+- Untuk 50.000-100.000 user, dibutuhkan PostgreSQL + event-driven architecture + dedicated services, bukan hanya Firestore untuk semua domain.
+
+=====================================================================
+FILE PRIORITAS AUDIT ULANG
+=====================================================================
+
+firestore.rules
+firebase.ts
+server.ts
+src/data/mockData.ts
+AuthModal.tsx
+GmailVerificationModal.tsx
+Google2faModal.tsx
+LoginVerificationModal.tsx
+WalletView.tsx
+DepositModal.tsx
+WithdrawModal.tsx
+TransferMemberModal.tsx
+ProfitShareModal.tsx
+BotMatrixView.tsx
+TradingPositionsView.tsx
+AdminUserManagementModal.tsx
+
+Seluruh file:
+
+- localStorage
+- Firestore access
+- Authentication
+- CCXT integration
+- Wallet logic
+- Transaction logic
+- Position logic
+
+=====================================================================
+DEFINISI GO PUBLIC
+=====================================================================
+
+Produk hanya dianggap siap go public apabila:
+
+1. Tidak ada mock data masuk production.
+2. Firestore rules telah diaudit.
+3. Role management telah benar.
+4. Wallet menggunakan ledger.
+5. LocalStorage bukan source utama.
+6. Audit log aktif.
+7. Monitoring aktif.
+8. Error tracking aktif.
+9. Setup developer terdokumentasi.
+10. Recovery process terdokumentasi.
+11. Backup strategy terdokumentasi.
+12. Authentication telah di-hardening.
+13. Exchange integration memiliki fallback.
+14. Semua transaksi tervalidasi server.
+15. Security review selesai.
+
+Catatan implementasi prioritas P0:
+
+- semua mutasi finansial harus melalui backend authoritative validation; route /api/wallet/authorize-financial-action merekam validasi server-side terhadap amount, userId, dan action.
+- wallet_ledger tetap non-writable dari client. Client hanya boleh membaca atau menampilkan saldo; mutasi sebenarnya harus melalui backend trusted service.
+- saldo final dan ledger tidak boleh diubah hanya dari localStorage atau UI patching.

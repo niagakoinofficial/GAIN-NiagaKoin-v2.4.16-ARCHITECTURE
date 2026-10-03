@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  gain-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - GAIN_V2_ENABLED=true
+      - REDIS_URL=redis://redis:6379
+      - REDIS_REQUIRED=true
+      - DATABASE_URL=postgresql://gain:gain@postgres:5432/gain
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - gain_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: gain
+      POSTGRES_USER: gain
+      POSTGRES_PASSWORD: gain
+    volumes:
+      - gain_pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+
+volumes:
+  gain_pgdata:
+  gain_redisdata:

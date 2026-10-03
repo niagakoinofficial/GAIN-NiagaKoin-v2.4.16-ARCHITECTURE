@@ -1,0 +1,65 @@
+services:
+  gain-staging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.staging
+    environment:
+      NODE_ENV: production
+      GAIN_ENV: staging
+      PORT: 3000
+      DATABASE_URL: postgresql://gain:gain@postgres:5432/gain
+      REDIS_URL: redis://redis:6379
+      LIVE_TRADING_ENABLED: "true"
+      LIVE_TRADING_TESTNET_ONLY: "true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  integration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.staging
+    environment:
+      NODE_ENV: test
+      GAIN_ENV: staging
+      DATABASE_URL: postgresql://gain:gain@postgres:5432/gain
+      REDIS_URL: redis://redis:6379
+      BINANCE_TESTNET_INTEGRATION_TEST: "true"
+      BINANCE_TESTNET_PLACE_ORDERS: "false"
+      FIREBASE_INTEGRATION_TEST: "true"
+      BSC_INTEGRATION_TEST: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["node", "scripts/integration-test.mjs"]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: gain
+      POSTGRES_USER: gain
+      POSTGRES_PASSWORD: gain
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gain -d gain"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - gain_staging_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  gain_staging_pgdata:

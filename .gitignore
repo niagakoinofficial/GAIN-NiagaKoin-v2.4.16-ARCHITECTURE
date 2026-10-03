@@ -1,0 +1,50 @@
+# Dependencies / caches
+node_modules/
+.pnp
+.pnp.js
+.npm/
+.pnpm-store/
+
+# Build / test outputs
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+!.env.staging.example
+
+*serviceAccount*.json
+serviceAccountKey.json
+*firebase-admin*.json
+hot-wallet-state.json
+*.pem
+*.key
+*.p12
+
+# Logs / local state
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS / editor
+.DS_Store
+__MACOSX/
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# AI Studio local artifacts
+.aistudio/

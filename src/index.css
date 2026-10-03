@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+	color-scheme: light;
+	--app-background: #f8fafc;
+	--app-foreground: #0f172a;
+	--surface-primary: #ffffff;
+	--surface-secondary: #f1f5f9;
+	--border-subtle: #e2e8f0;
+	--text-primary: #0f172a;
+	--text-secondary: #475569;
+}
+
+:root.dark {
+	color-scheme: dark;
+	--app-background: #0b0f17;
+	--app-foreground: #f1f5f9;
+	--surface-primary: #101a29;
+	--surface-secondary: #0b121f;
+	--border-subtle: #1e2e44;
+	--text-primary: #f1f5f9;
+	--text-secondary: #94a3b8;
+}
+
+.theme-surface {
+	background-color: var(--surface-primary);
+	color: var(--text-primary);
+	border-color: var(--border-subtle);
+}
+
+.theme-surface-secondary {
+	background-color: var(--surface-secondary);
+	border-color: var(--border-subtle);
+}
+
+.theme-modal-shell {
+	background-color: var(--surface-primary);
+	color: var(--text-primary);
+	border-color: var(--border-subtle);
+}
+
+:root.light .theme-modal-shell [class~="text-white"],
+:root.light .theme-modal-shell [class~="text-slate-100"],
+:root.light .theme-modal-shell [class~="text-slate-200"],
+:root.light .theme-modal-shell [class~="text-slate-300"] {
+	color: var(--text-primary) !important;
+}
+
+:root.light .theme-modal-shell [class*="bg-[#0"]:not([class*="bg-[#00"]),
+:root.light .theme-modal-shell [class*="bg-[#1"]:not([class*="bg-[#16a34a]"]),
+:root.light .theme-legacy-surface [class*="bg-[#0"]:not([class*="bg-[#00"]),
+:root.light .theme-legacy-surface [class*="bg-[#1"]:not([class*="bg-[#16a34a]"]) {
+	background-color: var(--surface-secondary) !important;
+}
+
+:root.light .theme-modal-shell [class*="border-[#1"],
+:root.light .theme-legacy-surface [class*="border-[#1"] {
+	border-color: var(--border-subtle) !important;
+}
+
+:root.light .theme-legacy-surface [class~="text-white"],
+:root.light .theme-legacy-surface [class~="text-slate-100"],
+:root.light .theme-legacy-surface [class~="text-slate-200"],
+:root.light .theme-legacy-surface [class~="text-slate-300"] {
+	color: var(--text-primary) !important;
+}
+
+html,
+body {
+	min-height: 100%;
+	background-color: var(--app-background);
+	color: var(--app-foreground);
+}
+
+input,
+select,
+textarea {
+	color-scheme: inherit;
+}
+
+:focus-visible {
+	outline: 2px solid #0f766e;
+	outline-offset: 2px;
+}
+
+:root.dark :focus-visible {
+	outline-color: #5eead4;
+}

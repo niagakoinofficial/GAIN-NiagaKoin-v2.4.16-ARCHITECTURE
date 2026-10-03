@@ -1,0 +1,9 @@
+{
+  "name": "GAIN-Niaga-Koin-v2.4.16",
+  "description": "GAIN — Niaga Koin: quantitative trading and algorithmic execution platform with guarded bot deployment, backtesting, analytics, recovery, multi-exchange certification, Architecture 25 authorization, and production-readiness gates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API",
+    "STRATEGY_DEPLOYMENT_PREFLIGHT"
+  ]
+}

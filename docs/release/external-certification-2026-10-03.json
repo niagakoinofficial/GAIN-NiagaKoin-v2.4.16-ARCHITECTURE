@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2026-10-02T18:30:20.781Z",
+  "mode": "PUBLIC_READ_ONLY",
+  "noOrdersSubmitted": true,
+  "checks": [
+    {
+      "exchange": "binance",
+      "status": "BLOCKED_ENVIRONMENT",
+      "reason": "Public internet preflight failed in the current runtime.",
+      "error": "fetch failed"
+    },
+    {
+      "exchange": "okx",
+      "status": "BLOCKED_ENVIRONMENT",
+      "reason": "Public internet preflight failed in the current runtime.",
+      "error": "fetch failed"
+    },
+    {
+      "exchange": "bybit",
+      "status": "BLOCKED_ENVIRONMENT",
+      "reason": "Public internet preflight failed in the current runtime.",
+      "error": "fetch failed"
+    },
+    {
+      "exchange": "bitget",
+      "status": "BLOCKED_ENVIRONMENT",
+      "reason": "Public internet preflight failed in the current runtime.",
+      "error": "fetch failed"
+    },
+    {
+      "exchange": "coinbase",
+      "status": "BLOCKED_ENVIRONMENT",
+      "reason": "Public internet preflight failed in the current runtime.",
+      "error": "fetch failed"
+    },
+    {
+      "exchange": "kraken",
+      "status": "BLOCKED_ENVIRONMENT",
+      "reason": "Public internet preflight failed in the current runtime.",
+      "error": "fetch failed"
+    },
+    {
+      "exchange": "indodax",
+      "status": "BLOCKED_ENVIRONMENT",
+      "reason": "Public internet preflight failed in the current runtime.",
+      "error": "fetch failed"
+    },
+    {
+      "exchange": "reku",
+      "status": "BLOCKED_ENVIRONMENT",
+      "reason": "Public internet preflight failed in the current runtime.",
+      "error": "fetch failed"
+    },
+    {
+      "exchange": "reku-bidask",
+      "status": "BLOCKED_ENVIRONMENT",
+      "reason": "Public internet preflight failed in the current runtime.",
+      "error": "fetch failed"
+    },
+    {
+      "exchange": "triv",
+      "status": "BLOCKED_PENDING_NATIVE_API",
+      "latencyMs": 0,
+      "reason": "Official public market pages are discoverable, but a sufficiently documented public/native trading API was not verified. GAIN does not scrape the UI or invent an endpoint."
+    }
+  ],
+  "environmentNetworkBlocked": true,
+  "environmentNetworkReason": "fetch failed",
+  "summary": {
+    "pass": 0,
+    "fail": 0,
+    "blocked": 10
+  }
+}

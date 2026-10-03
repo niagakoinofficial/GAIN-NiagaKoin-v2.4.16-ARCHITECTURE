@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+firebase-admin-sdk.json
+*.pem
+*.key
+*.p12
+*.backup*
+.DS_Store
+*.log
+
+__MACOSX/
+.DS_Store

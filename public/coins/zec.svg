@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <circle cx="32" cy="32" r="32" fill="#F4B728"/>
+  <!-- Top and bottom vertical bars for Zcash currency symbol -->
+  <rect x="29.5" y="10" width="5" height="9" rx="1.5" fill="#1C1819"/>
+  <rect x="29.5" y="45" width="5" height="9" rx="1.5" fill="#1C1819"/>
+  <!-- Z body -->
+  <path fill="#1C1819" fill-rule="evenodd" clip-rule="evenodd" d="M19 18h26v6.2l-16.8 15.6H45V46H19v-6.2l16.8-15.6H19V18z"/>
+</svg>
