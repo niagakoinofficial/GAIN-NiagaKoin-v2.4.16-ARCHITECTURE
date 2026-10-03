@@ -60,6 +60,26 @@
 	border-color: var(--border-subtle) !important;
 }
 
+
+:root.light .theme-promo-card {
+	background: var(--surface-primary) !important;
+	color: var(--text-primary) !important;
+	border-color: var(--border-subtle) !important;
+}
+
+:root.light .theme-promo-card [class*="bg-[#0"],
+:root.light .theme-promo-card [class*="bg-[#1"],
+:root.light .theme-promo-card [class*="bg-[#2"] {
+	background-color: var(--surface-secondary) !important;
+}
+
+:root.light .theme-promo-card [class~="text-white"],
+:root.light .theme-promo-card [class~="text-slate-100"],
+:root.light .theme-promo-card [class~="text-slate-200"],
+:root.light .theme-promo-card [class~="text-slate-300"] {
+	color: var(--text-primary) !important;
+}
+
 :root.light .theme-legacy-surface [class~="text-white"],
 :root.light .theme-legacy-surface [class~="text-slate-100"],
 :root.light .theme-legacy-surface [class~="text-slate-200"],
@@ -88,3 +108,5 @@ textarea {
 :root.dark :focus-visible {
 	outline-color: #5eead4;
 }
+
+:root.light select option { background: #ffffff; color: #0f172a; }

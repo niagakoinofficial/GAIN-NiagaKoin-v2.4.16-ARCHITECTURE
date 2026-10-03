@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Info, Sliders, ShieldCheck, Activity, TrendingUp, DollarSign } from 'lucide-react';
 import { TradingPosition } from '../../types';
 import { CoinLogo } from '../common/CoinLogo';
+import { getBotModeLabel, normalizeBotMode } from '../../utils/botModeLabels';
 
 interface TradeInfoModalProps {
   isOpen: boolean;
@@ -47,7 +48,7 @@ export function TradeInfoModal({
             </div>
             <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
               <span className="text-[10px] text-slate-500 uppercase block">Mode</span>
-              <span className="font-bold text-amber-400 text-sm">{position.botMode || 'Avarage+Grid'}</span>
+              <span className="font-bold text-amber-400 text-sm">{getBotModeLabel(normalizeBotMode(position.botMode), 'id')}</span>
             </div>
             <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
               <span className="text-[10px] text-slate-500 uppercase block">Alokasi Total</span>

@@ -47,6 +47,7 @@ import { assertProductionSafeMode, isDemoMode } from './config/appMode';
 import { validateFinancialAction } from './utils/serverValidation';
 import { postJson } from './api/httpClient';
 import { getLicenseTierConfig } from './config/licensePromo';
+import { normalizeBotMode } from './utils/botModeLabels';
 
 import {
   subscribeToUserWallet,
@@ -1881,6 +1882,11 @@ function AppContent() {
         'success'
       );
     } catch (error: any) {
+      if (error?.code === 'SESSION_ELEVATION_REQUIRED') {
+        // httpClient already emits the security-elevation-required event.
+        // The modal is the expected UX, so do not surface a red console error/toast.
+        return;
+      }
       console.error('[BOT_STATUS_CHANGE_FAILED]', {
         botId: targetBotId,
         pair: targetPos.pair,
@@ -2045,6 +2051,14 @@ function AppContent() {
       return;
     }
 
+    const resolvedBotMode = normalizeBotMode(config.botMode);
+    const configuredMinPrice = Number(config.minPrice || 0);
+    const configuredMaxPrice = Number(config.maxPrice || 0);
+    if ((resolvedBotMode === 'Grid Only' || resolvedBotMode === 'Avarage+Grid') && !(configuredMinPrice > 0 && configuredMaxPrice > configuredMinPrice)) {
+      showToast('Mode Grid membutuhkan Min Price dan Max Price yang valid sebelum bot dijalankan.', 'error');
+      return;
+    }
+
     const coinsToDeploy = Array.isArray(config.pairedCoins) && config.pairedCoins.length > 0
       ? config.pairedCoins
       : [config.pair];
@@ -2055,8 +2069,8 @@ function AppContent() {
 
     const finalBotName = config.botName?.trim() || `GAIN Matrix Bot (${coinsToDeploy.length} Koin Terpairing)`;
 
-    const avgL = config.averagingLayers ?? (config.botMode === 'Grid Only' ? 0 : config.botMode === 'Avarage+Grid' ? 20 : config.layerCount);
-    const gridL = config.gridLayers ?? (config.botMode === 'Avarage Only' ? 0 : config.botMode === 'Avarage+Grid' ? 100 : config.layerCount);
+    const avgL = config.averagingLayers ?? (resolvedBotMode === 'Grid Only' ? 0 : resolvedBotMode === 'Avarage+Grid' ? 20 : config.layerCount);
+    const gridL = config.gridLayers ?? (resolvedBotMode === 'Avarage Only' ? 0 : resolvedBotMode === 'Avarage+Grid' ? 100 : config.layerCount);
 
     // Calculate active bots count excluding current primaryBotId
     const activeBotIds = new Set(
@@ -2128,16 +2142,16 @@ function AppContent() {
           botId: primaryBotId,
           botName: finalBotName,
           pairedCoins: coinsToDeploy,
-          botMode: config.botMode,
-          maxStep: config.layerCount,
-          layerQuota: `1 s/d ${config.layerCount} Layer (${config.botMode})`,
+          botMode: resolvedBotMode,
+          maxStep: Math.max(1, avgL + gridL),
+          layerQuota: `1 s/d ${Math.max(1, avgL + gridL)} Layer (${resolvedBotMode})`,
           initialEntryAmount: initEntryAmt,
           initialEntryPrice: existingForBotAndCoin.initialEntryPrice || currentPrice,
           timeframe: selectedTf,
           allocationUsdt: `${(initEntryAmt + config.baseAmount).toFixed(2)} USDT`,
           status: initialStatus,
           statusLabel: initialStatusLabel,
-          engine: `${config.botMode} (${avgL > 0 ? `${avgL}L Avg` : ''}${avgL > 0 && gridL > 0 ? ' + ' : ''}${gridL > 0 ? `${gridL}L Grid` : ''}) · 1 Bot ${coinsToDeploy.length} Koin · TF ${selectedTf}`,
+          engine: `${resolvedBotMode} (${avgL > 0 ? `${avgL}L Avg` : ''}${avgL > 0 && gridL > 0 ? ' + ' : ''}${gridL > 0 ? `${gridL}L Grid` : ''}) · 1 Bot ${coinsToDeploy.length} Koin · TF ${selectedTf}`,
           uptrendFilter: config.uptrendFilter ?? true,
           tpCallbackPct: config.tpCallbackPct ?? 0.2,
           layerCallbackPct: config.layerCallbackPct ?? 0.2,
@@ -2160,7 +2174,7 @@ function AppContent() {
           statusLabel: initialStatusLabel,
           price: currentPrice,
           change24h: 1.2,
-          engine: `${config.botMode} (${avgL > 0 ? `${avgL}L Avg` : ''}${avgL > 0 && gridL > 0 ? ' + ' : ''}${gridL > 0 ? `${gridL}L Grid` : ''}) · 1 Bot ${coinsToDeploy.length} Koin · TF ${selectedTf}`,
+          engine: `${resolvedBotMode} (${avgL > 0 ? `${avgL}L Avg` : ''}${avgL > 0 && gridL > 0 ? ' + ' : ''}${gridL > 0 ? `${gridL}L Grid` : ''}) · 1 Bot ${coinsToDeploy.length} Koin · TF ${selectedTf}`,
           initialEntryAmount: initEntryAmt,
           initialEntryPrice: currentPrice,
           timeframe: selectedTf,
@@ -2169,18 +2183,18 @@ function AppContent() {
           floatingPnl: 0.0,
           roiPct: 0.0,
           stepLayer: 1,
-          maxStep: config.layerCount,
-          layerQuota: `1 s/d ${config.layerCount} Layer`,
+          maxStep: Math.max(1, avgL + gridL),
+          layerQuota: `1 s/d ${Math.max(1, avgL + gridL)} Layer`,
           tpTargetPrice: `+${config.baseTp}% Trailing`,
           tpTriggerPrice: `+${config.baseTp}%`,
           nextAveragingTrigger: `-${config.averageDownPct || 2.0}%`,
           trailingProgressPct: 10,
-          trailingInfo: `${config.botMode} (${avgL}L Avg + ${gridL}L Grid) Ready · Baseline Marker $${initEntryAmt}`,
+          trailingInfo: `${resolvedBotMode} (${avgL}L Avg + ${gridL}L Grid) Ready · Baseline Marker $${initEntryAmt}`,
           badgeSymbol: coin.slice(0, 3).toUpperCase(),
           logoUrl: `/coins/${coin.toLowerCase()}.svg`,
           badgeBg: 'bg-teal-500/20',
           badgeColor: 'text-teal-400',
-          botMode: config.botMode,
+          botMode: resolvedBotMode,
           uptrendFilter: config.uptrendFilter ?? true,
           tpCallbackPct: config.tpCallbackPct ?? 0.2,
           layerCallbackPct: config.layerCallbackPct ?? 0.2,
@@ -2208,7 +2222,7 @@ function AppContent() {
             botName: finalBotName,
             pair: coinsToDeploy[0],
             pairedCoins: coinsToDeploy,
-            botMode: config.botMode,
+            botMode: resolvedBotMode,
             baseAmount: config.baseAmount,
             baseTp: config.baseTp,
             useMoneyManagement: config.useMoneyManagement ?? true,

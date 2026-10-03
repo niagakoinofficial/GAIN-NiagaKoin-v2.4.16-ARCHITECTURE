@@ -78,7 +78,7 @@ export function HeaderBar({
     openLogin,
   } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const exchanges: ExchangeName[] = getExchangeNames();
 
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -293,7 +293,7 @@ export function HeaderBar({
                         className="w-full px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition flex items-center justify-center gap-2 font-mono text-xs font-bold cursor-pointer"
                       >
                         <ShieldCheck className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                        <span>Kelola Semua User (Admin)</span>
+                        <span>{t('admin')}: {language === 'id' ? 'Kelola Semua User' : 'Manage All Users'}</span>
                       </button>
                     </div>
                   )}
@@ -345,7 +345,7 @@ export function HeaderBar({
             title="Pusat Manajemen Semua User"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
-            <span>Admin</span>
+            <span>{t('admin')}</span>
           </button>
         )}
 
@@ -530,7 +530,7 @@ export function HeaderBar({
             value={language}
             onChange={(event) => setLanguage(event.target.value as typeof language)}
             className="bg-transparent outline-none font-semibold cursor-pointer max-w-[88px]"
-            aria-label="Pilih bahasa"
+            aria-label={t('language')}
           >
             {APP_LANGUAGES.map((item) => (
               <option key={item.id} value={item.id}>{item.nativeLabel}</option>

@@ -2772,45 +2772,49 @@ async function fetchBinancePublicSpotPrices(
   const baseUrl = isSandbox
     ? 'https://testnet.binance.vision'
     : 'https://data-api.binance.vision';
-  const encodedSymbols = encodeURIComponent(JSON.stringify(
-    symbols.map((symbol) => symbol.replace('/', '').toUpperCase()),
-  ));
-  const url = `${baseUrl}/api/v3/ticker/price?symbols=${encodedSymbols}`;
-
-  const response = await fetch(url, {
-    headers: { accept: 'application/json' },
-    signal: AbortSignal.timeout(5000),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Binance public ticker fallback HTTP ${response.status}`);
-  }
-
-  const payload = await response.json() as unknown;
-  const rows = Array.isArray(payload) ? payload : [payload];
+  const normalizedSymbols = symbols.map((symbol) => symbol.replace('/', '').toUpperCase());
   const now = Date.now();
   const result: Record<string, { last: number; percentage: number; timestamp: number; source: string; quoteCurrency: string }> = {};
 
-  for (const row of rows as Array<Record<string, unknown>>) {
+  // Binance Testnet has historically been less consistent with the multi-symbol
+  // `symbols=[...]` form. For sandbox market-data fallback, request each symbol
+  // explicitly. This remains public/read-only and is only a market-data fallback.
+  const responses = await Promise.allSettled(
+    normalizedSymbols.map(async (rawSymbol) => {
+      const url = `${baseUrl}/api/v3/ticker/price?symbol=${encodeURIComponent(rawSymbol)}`;
+      const response = await fetch(url, {
+        headers: { accept: 'application/json' },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) throw new Error(`Binance public ticker fallback HTTP ${response.status}`);
+      return await response.json() as Record<string, unknown>;
+    }),
+  );
+
+  for (const response of responses) {
+    if (response.status !== 'fulfilled') continue;
+    const row = response.value;
     const rawSymbol = typeof row?.symbol === 'string' ? row.symbol.toUpperCase() : '';
     const last = Number(row?.price);
     if (!rawSymbol || !Number.isFinite(last) || last <= 0) continue;
     const slashPair = rawSymbol.endsWith('USDT')
       ? `${rawSymbol.slice(0, -4)}/USDT`
-      : null;
-    if (!slashPair || !symbols.includes(slashPair)) continue;
-
+      : rawSymbol;
     result[slashPair] = {
       last,
       percentage: 0,
       timestamp: now,
       source: 'binance-public-rest',
-      quoteCurrency: 'USDT',
+      quoteCurrency: slashPair.endsWith('/USDT') ? 'USDT' : 'UNKNOWN',
     };
   }
 
+  if (Object.keys(result).length === 0) {
+    throw new Error('Binance public ticker fallback returned no usable prices');
+  }
   return result;
 }
+
 
 async function fetchRekuPublicPrices(symbols: string[]): Promise<Record<string, { last: number; percentage: number; timestamp: number; source: string; quoteCurrency: string }>> {
   const response = await fetch('https://api.reku.id/v2/price', {
@@ -4662,6 +4666,11 @@ const BotRegisterSchema = z.object({
   isSandbox: z.boolean().default(true),
 }).refine((value) => !value.pairedCoins || new Set(value.pairedCoins).size === value.pairedCoins.length, {
   message: 'pairedCoins must not contain duplicates',
+}).refine((value) => {
+  if (value.botMode !== 'Grid Only' && value.botMode !== 'Avarage+Grid') return true;
+  return value.minPrice > 0 && value.maxPrice > value.minPrice;
+}, {
+  message: 'Grid modes require minPrice > 0 and maxPrice > minPrice',
 });
 const BotCredentialSchema = z.object({
   exchange: z.string().trim().toLowerCase().pipe(z.enum(['binance', 'bitget', 'okx'])),
@@ -5359,14 +5368,17 @@ async function runBotCycle(): Promise<void> {
         }
       }
 
-      // 3. Legacy Averaging Down / Grid Trigger Condition (compatibility mode).
+      // 3. Legacy compatibility path. Grid Only must never fall through to
+      // percentage-drop averaging. Without a native grid intent, wait safely.
+      if (bot.botMode === 'Grid Only') {
+        continue;
+      }
+
       // Average+Grid: 20 layer Average + 100 layer Grid (Total 120 layers max)
       // Grid Only: 100 layers max
       // Avarage Only: 20 layers max
       const maxAllowedLayers =
-        bot.botMode === 'Grid Only'
-          ? (bot.gridLayers || 100)
-          : bot.botMode === 'Avarage+Grid'
+        bot.botMode === 'Avarage+Grid'
           ? ((bot.averagingLayers || 20) + (bot.gridLayers || 100))
           : (bot.averagingLayers || 20);
 
@@ -5437,7 +5449,7 @@ async function runBotCycle(): Promise<void> {
           bot.stepLayer += 1;
           bot.troughPrice = currentPrice;
 
-          const isGridLayer = bot.botMode === 'Grid Only' || (bot.botMode === 'Avarage+Grid' && bot.stepLayer > (bot.averagingLayers || 20));
+          const isGridLayer = bot.botMode === 'Avarage+Grid' && bot.stepLayer > (bot.averagingLayers || 20);
           const logItem: BotEngineLog = {
             id: `log-avg-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
             uid: bot.uid,

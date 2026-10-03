@@ -27,7 +27,7 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     sellNow: 'Jual Sekarang', cancel: 'Batal', executing: 'Sedang Menjual...',
     noCredentials: 'Kredensial exchange dikelola oleh server. Anda tidak perlu memasukkan API Key lagi di jendela ini.',
     exchangeTestnet: 'Exchange Testnet', exchangeLive: 'Exchange Live',
-    simpleTerms: 'Istilah sederhana', technicalTerms: 'Istilah teknis',
+    simpleTerms: 'Istilah sederhana', technicalTerms: 'Istilah teknis', home: 'Beranda', wallet: 'Wallet', bot: 'Bot', account: 'Akun', admin: 'Admin', activeMarket: 'Bursa Aktif', sort: 'Urutkan', stableOrder: 'Urutan Tetap', pnlHigh: 'PnL Tertinggi', pnlLow: 'PnL Terendah', layerHigh: 'Layer Tertinggi', searchAssets: 'Cari aset (cth: BTC, SOL, ETH, Grid)...', filledLayer: 'Layer Terisi', nextLayer: 'Layer Berikutnya', runningAutomatically: 'Berjalan Otomatis', paused: 'Sedang Dijeda',
   },
   en: {
     tradingMode: 'Display Mode', beginner: 'Beginner', pro: 'Pro', language: 'Language', glossary: 'Trading Glossary',
@@ -40,7 +40,7 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     warningLoss: 'Warning: this position is currently at a loss. Closing now will realize that loss.',
     sellNow: 'Sell Now', cancel: 'Cancel', executing: 'Selling...',
     noCredentials: 'Exchange credentials are managed by the server. You do not need to enter an API key in this window.',
-    exchangeTestnet: 'Exchange Testnet', exchangeLive: 'Exchange Live', simpleTerms: 'Simple terms', technicalTerms: 'Technical terms',
+    exchangeTestnet: 'Exchange Testnet', exchangeLive: 'Exchange Live', simpleTerms: 'Simple terms', technicalTerms: 'Technical terms', home: 'Home', wallet: 'Wallet', bot: 'Bot', account: 'Account', admin: 'Admin', activeMarket: 'Market Active', sort: 'Sort', stableOrder: 'Stable Order', pnlHigh: 'Highest PnL', pnlLow: 'Lowest PnL', layerHigh: 'Highest Layer', searchAssets: 'Search assets (e.g. BTC, SOL, ETH, Grid)...', filledLayer: 'Filled Layer', nextLayer: 'Next Layer', runningAutomatically: 'Running Automatically', paused: 'Paused',
   },
   zh: {
     tradingMode: '显示模式', beginner: '新手', pro: '专业', language: '语言', glossary: '交易术语',
@@ -50,7 +50,7 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     takeProfit: '止盈', closePosition: '平仓', forceClose: '立即平仓', marketPrice: '当前市场价格', quantity: '币数量',
     confirmation: '确认卖出', sellExplanation: '将按最新市场价格卖出。此操作会手动平仓，不等待自动目标。', warningLoss: '注意：该仓位目前亏损，现在平仓会实现亏损。',
     sellNow: '立即卖出', cancel: '取消', executing: '正在卖出...', noCredentials: '交易所凭证由服务器管理，此窗口无需输入 API Key。',
-    exchangeTestnet: '交易所测试网', exchangeLive: '交易所实盘', simpleTerms: '简单术语', technicalTerms: '专业术语',
+    exchangeTestnet: '交易所测试网', exchangeLive: '交易所实盘', simpleTerms: '简单术语', technicalTerms: '专业术语', home: '首页', wallet: '钱包', bot: '机器人', account: '账户', admin: '管理员', activeMarket: '市场活跃', sort: '排序', stableOrder: '固定顺序', pnlHigh: '最高盈亏', pnlLow: '最低盈亏', layerHigh: '最高层级', searchAssets: '搜索资产（如 BTC、SOL、ETH、Grid）...', filledLayer: '已填充层', nextLayer: '下一层', runningAutomatically: '自动运行', paused: '已暂停',
   },
   hi: {
     tradingMode: 'दृश्य मोड', beginner: 'शुरुआती', pro: 'प्रो', language: 'भाषा', glossary: 'ट्रेडिंग शब्दावली',
@@ -60,7 +60,7 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     takeProfit: 'लाभ लें', closePosition: 'पोज़िशन बंद करें', forceClose: 'अभी बंद करें', marketPrice: 'वर्तमान बाजार मूल्य', quantity: 'कॉइन मात्रा',
     confirmation: 'बिक्री की पुष्टि', sellExplanation: 'कॉइन नवीनतम बाजार मूल्य पर बेचा जाएगा। यह पोज़िशन को मैन्युअल रूप से बंद करता है।', warningLoss: 'चेतावनी: यह पोज़िशन अभी नुकसान में है। अभी बंद करने पर नुकसान तय हो जाएगा।',
     sellNow: 'अभी बेचें', cancel: 'रद्द करें', executing: 'बेचा जा रहा है...', noCredentials: 'एक्सचेंज क्रेडेंशियल सर्वर संभालता है। इस विंडो में API Key की जरूरत नहीं।',
-    exchangeTestnet: 'एक्सचेंज टेस्टनेट', exchangeLive: 'एक्सचेंज लाइव', simpleTerms: 'सरल शब्द', technicalTerms: 'तकनीकी शब्द',
+    exchangeTestnet: 'एक्सचेंज टेस्टनेट', exchangeLive: 'एक्सचेंज लाइव', simpleTerms: 'सरल शब्द', technicalTerms: 'तकनीकी शब्द', home: 'होम', wallet: 'वॉलेट', bot: 'बॉट', account: 'खाता', admin: 'एडमिन', activeMarket: 'मार्केट सक्रिय', sort: 'क्रम', stableOrder: 'स्थिर क्रम', pnlHigh: 'सबसे अधिक PnL', pnlLow: 'सबसे कम PnL', layerHigh: 'सबसे अधिक लेयर', searchAssets: 'एसेट खोजें (जैसे BTC, SOL, ETH, Grid)...', filledLayer: 'भरी हुई लेयर', nextLayer: 'अगली लेयर', runningAutomatically: 'स्वचालित रूप से चल रहा', paused: 'रुका हुआ',
   },
   es: {
     tradingMode: 'Modo de vista', beginner: 'Principiante', pro: 'Pro', language: 'Idioma', glossary: 'Glosario de trading',
@@ -70,7 +70,7 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     takeProfit: 'Tomar ganancias', closePosition: 'Cerrar posición', forceClose: 'Cerrar ahora', marketPrice: 'Precio de mercado actual', quantity: 'Cantidad de monedas',
     confirmation: 'Confirmar venta', sellExplanation: 'La moneda se venderá al precio de mercado actual. Esto cierra manualmente la posición.', warningLoss: 'Atención: esta posición tiene pérdidas. Cerrar ahora realizará esa pérdida.',
     sellNow: 'Vender ahora', cancel: 'Cancelar', executing: 'Vendiendo...', noCredentials: 'Las credenciales del exchange son gestionadas por el servidor. No necesitas introducir una API Key aquí.',
-    exchangeTestnet: 'Exchange Testnet', exchangeLive: 'Exchange Live', simpleTerms: 'Términos simples', technicalTerms: 'Términos técnicos',
+    exchangeTestnet: 'Exchange Testnet', exchangeLive: 'Exchange Live', simpleTerms: 'Términos simples', technicalTerms: 'Términos técnicos', home: 'Inicio', wallet: 'Billetera', bot: 'Bot', account: 'Cuenta', admin: 'Admin', activeMarket: 'Mercado activo', sort: 'Ordenar', stableOrder: 'Orden estable', pnlHigh: 'PnL más alto', pnlLow: 'PnL más bajo', layerHigh: 'Capa más alta', searchAssets: 'Buscar activos (ej.: BTC, SOL, ETH, Grid)...', filledLayer: 'Capa llena', nextLayer: 'Siguiente capa', runningAutomatically: 'Ejecución automática', paused: 'En pausa',
   },
   ar: {
     tradingMode: 'وضع العرض', beginner: 'مبتدئ', pro: 'احترافي', language: 'اللغة', glossary: 'قاموس التداول',
@@ -80,7 +80,7 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     takeProfit: 'جني الأرباح', closePosition: 'إغلاق الصفقة', forceClose: 'إغلاق الآن', marketPrice: 'سعر السوق الحالي', quantity: 'كمية العملة',
     confirmation: 'تأكيد البيع', sellExplanation: 'سيتم بيع العملة بسعر السوق الحالي. هذا يغلق الصفقة يدويًا دون انتظار الهدف التلقائي.', warningLoss: 'تنبيه: هذه الصفقة خاسرة حاليًا. إغلاقها الآن سيحقق الخسارة.',
     sellNow: 'بيع الآن', cancel: 'إلغاء', executing: 'جارٍ البيع...', noCredentials: 'بيانات اعتماد المنصة يديرها الخادم. لا تحتاج إلى إدخال API Key هنا.',
-    exchangeTestnet: 'شبكة اختبار', exchangeLive: 'تداول حي', simpleTerms: 'مصطلحات مبسطة', technicalTerms: 'مصطلحات تقنية',
+    exchangeTestnet: 'شبكة اختبار', exchangeLive: 'تداول حي', simpleTerms: 'مصطلحات مبسطة', technicalTerms: 'مصطلحات تقنية', home: 'الرئيسية', wallet: 'المحفظة', bot: 'الروبوت', account: 'الحساب', admin: 'الإدارة', activeMarket: 'السوق نشط', sort: 'ترتيب', stableOrder: 'ترتيب ثابت', pnlHigh: 'أعلى ربح/خسارة', pnlLow: 'أدنى ربح/خسارة', layerHigh: 'أعلى طبقة', searchAssets: 'ابحث عن الأصول (مثل BTC وSOL وETH وGrid)...', filledLayer: 'الطبقة المكتملة', nextLayer: 'الطبقة التالية', runningAutomatically: 'يعمل تلقائيًا', paused: 'متوقف',
   },
 };
 

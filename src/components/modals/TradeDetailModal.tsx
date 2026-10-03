@@ -16,6 +16,7 @@ import {
 import { TradingPosition, ExecutedLayerDetail } from '../../types';
 import { formatUsdt } from '../../utils/formatters';
 import { generateDefaultLayersForPosition } from '../../utils/tradingPositionUtils';
+import { getBotModeLabel, normalizeBotMode } from '../../utils/botModeLabels';
 import { CoinLogo } from '../common/CoinLogo';
 
 interface TradeDetailModalProps {
@@ -45,6 +46,10 @@ export function TradeDetailModal({
   const layers = allLayers.filter((layer) => !closedLayerIds.has(layer.id));
 
   const isProfitable = (position.floatingPnl ?? 0) >= 0;
+  const maxLayers = Math.max(1, Number(position.maxStep) || 1);
+  const runtimeStep = Math.max(0, Number(position.stepLayer) || 0);
+  const filledLayerCount = Number(position.totalCoinQty ?? 0) > 0 ? Math.min(maxLayers, Math.max(1, runtimeStep - 1)) : 0;
+
 
   const handleCloseSingleLayer = async (layerId: string) => {
     setClosingLayerId(layerId);
@@ -68,7 +73,7 @@ export function TradeDetailModal({
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-white font-mono">{position.pair}</h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  {position.botMode || 'Avarage+Grid'}
+                  {getBotModeLabel(normalizeBotMode(position.botMode), 'id')}
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                   position.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'
@@ -112,7 +117,7 @@ export function TradeDetailModal({
           <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
             <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-mono">Total Layer</span>
             <span className="text-sm font-bold text-amber-400 font-mono">
-              Layer {position.stepLayer || layers.length} / {position.maxStep || 100}
+              Layer {filledLayerCount || layers.length} / {maxLayers}
             </span>
             <span className="text-[10px] text-slate-400 font-mono block">
               Alokasi: {position.allocationUsdt || '$0.00'}

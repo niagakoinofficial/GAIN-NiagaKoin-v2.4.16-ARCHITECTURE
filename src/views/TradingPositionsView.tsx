@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { APP_LANGUAGES, useLanguage } from '../context/LanguageContext';
 import { TradingPosition, UserWallet, TradeRecord, BotMode } from '../types';
 import { CoinDistributionPieChart } from '../components/CoinDistributionPieChart';
@@ -7,6 +7,7 @@ import { TradeDetailModal } from '../components/modals/TradeDetailModal';
 import { CoinLogo } from '../components/common/CoinLogo';
 import { formatUsdt } from '../utils/formatters';
 import { getLicenseTierConfig } from '../config/licensePromo';
+import { getBotModeLabel, normalizeBotMode } from '../utils/botModeLabels';
 import { calculatePositionAnalytics } from '../utils/positionAnalytics';
 import {
   TrendingUp,
@@ -133,7 +134,9 @@ export function TradingPositionsView({
   const [mainTab, setMainTab] = useState<'positions' | 'history'>('positions');
   const [filterTab, setFilterTab] = useState<'all' | 'active' | 'profit' | 'drawdown' | 'inactive' | 'avg_only' | 'grid_only' | 'hybrid'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'pnl_desc' | 'pnl_asc' | 'layer_desc'>('pnl_desc');
+  const [sortBy, setSortBy] = useState<'stable' | 'pnl_desc' | 'pnl_asc' | 'layer_desc'>('stable');
+  const stableOrderRef = useRef(new Map<string, number>());
+  const nextStableOrderRef = useRef(0);
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'success' | 'warning'>('success');
   const [isConfirmBatchTpOpen, setIsConfirmBatchTpOpen] = useState(false);
@@ -182,6 +185,7 @@ export function TradingPositionsView({
         priceBoundaryStatus: (bot.priceBoundaryStatus || position.priceBoundaryStatus) as TradingPosition['priceBoundaryStatus'],
         status: bot.status === 'active' ? 'active' : bot.status === 'error' ? 'averaging' : position.status,
         statusLabel: bot.status === 'active' ? 'AKTIF RUNNING' : position.statusLabel,
+        botMode: normalizeBotMode(bot.strategy || position.botMode),
       };
     });
 
@@ -211,7 +215,7 @@ export function TradingPositionsView({
         price: marketPrice,
         change24h: 0,
         engine: 'GAIN Runtime Engine',
-        botMode: bot.strategy,
+        botMode: normalizeBotMode(bot.strategy),
         allocationQty: `${qty} ${coin}`,
         allocationUsdt: `$${costBasis.toFixed(2)}`,
         stepLayer: Math.max(1, Number(bot.stepLayer) || 1),
@@ -335,29 +339,37 @@ export function TradingPositionsView({
   );
 
 
+  const stableKeyFor = (pos: TradingPosition) => `${pos.botId || pos.id || pos.botName || 'bot'}::${pos.pair}`;
+  for (const pos of displayPositions) {
+    const key = stableKeyFor(pos);
+    if (!stableOrderRef.current.has(key)) stableOrderRef.current.set(key, nextStableOrderRef.current++);
+  }
+
   const filteredPositions = displayPositions
     .filter((pos) => {
+      const mode = normalizeBotMode(pos.botMode);
       if (filterTab === 'active' && pos.status === 'inactive') return false;
       if (filterTab === 'profit' && Number(pos.floatingPnl ?? 0) <= 0) return false;
       if (filterTab === 'drawdown' && (Number(pos.floatingPnl ?? 0) >= 0 || pos.status === 'inactive')) return false;
       if (filterTab === 'inactive' && pos.status !== 'inactive') return false;
-      if (filterTab === 'avg_only' && pos.botMode !== 'Avarage Only') return false;
-      if (filterTab === 'grid_only' && pos.botMode !== 'Grid Only') return false;
-      if (filterTab === 'hybrid' && pos.botMode !== 'Avarage+Grid' && pos.botMode !== undefined) return false;
+      if (filterTab === 'avg_only' && mode !== 'Avarage Only') return false;
+      if (filterTab === 'grid_only' && mode !== 'Grid Only') return false;
+      if (filterTab === 'hybrid' && mode !== 'Avarage+Grid') return false;
 
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
       return (
         pos.pair.toLowerCase().includes(q) ||
         pos.coin.toLowerCase().includes(q) ||
-        (pos.botMode && pos.botMode.toLowerCase().includes(q))
+        getBotModeLabel(mode, language).toLowerCase().includes(q) ||
+        mode.toLowerCase().includes(q)
       );
     })
     .sort((a, b) => {
       if (sortBy === 'pnl_desc') return Number(b.floatingPnl ?? 0) - Number(a.floatingPnl ?? 0);
       if (sortBy === 'pnl_asc') return Number(a.floatingPnl ?? 0) - Number(b.floatingPnl ?? 0);
-      if (sortBy === 'layer_desc') return b.stepLayer - a.stepLayer;
-      return 0;
+      if (sortBy === 'layer_desc') return Number(b.stepLayer ?? 0) - Number(a.stepLayer ?? 0);
+      return (stableOrderRef.current.get(stableKeyFor(a)) ?? 0) - (stableOrderRef.current.get(stableKeyFor(b)) ?? 0);
     });
 
   const showToast = (msg: string, type: 'success' | 'warning' = 'success') => {
@@ -461,7 +473,7 @@ export function TradingPositionsView({
               <span>Posisi Trading Aktif · Live Bot Positions</span>
             </h2>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-              3 Mode: Averager (1L default) • Grid (5L default) • Avg+Grid (1L + 5L) • Closed-Candle TF • Filter Uptrend • Trailing TP
+              3 Mode: Average Only (1L default) • Grid Only (5L default) • Average + Grid (1L + 5L) • Closed-Candle TF • Filter Uptrend • Trailing TP
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -858,9 +870,9 @@ export function TradingPositionsView({
                 { id: 'active', label: `Aktif (${activeCount})` },
                 { id: 'profit', label: `Profit (${profitCount})` },
                 { id: 'drawdown', label: `Drawdown (${drawdownCount})` },
-                { id: 'avg_only', label: 'Avarage Only' },
+                { id: 'avg_only', label: 'Average Only' },
                 { id: 'grid_only', label: 'Grid Only' },
-                { id: 'hybrid', label: 'Avarage+Grid' },
+                { id: 'hybrid', label: 'Average + Grid' },
                 { id: 'inactive', label: `Standby (${inactiveCount})` },
               ].map((tab) => (
                 <button
@@ -951,7 +963,7 @@ export function TradingPositionsView({
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
-                placeholder="Cari aset (cth: BTC, SOL, ETH, Grid)..."
+                placeholder={t('searchAssets')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-white dark:bg-[#08101D] border border-slate-300 dark:border-[#142236] text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:border-teal-500 shadow-sm"
@@ -959,15 +971,16 @@ export function TradingPositionsView({
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-slate-500 text-[10px]">Urutkan:</span>
+              <span className="text-slate-500 text-[10px]">{t('sort')}:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#08101D] border border-slate-300 dark:border-[#142236] text-slate-800 dark:text-slate-300 focus:outline-none focus:border-teal-500 shadow-sm"
               >
-                <option value="pnl_desc">PnL Tertinggi</option>
-                <option value="pnl_asc">PnL Terendah</option>
-                <option value="layer_desc">Layer Tertinggi</option>
+                <option value="stable">{t('stableOrder')}</option>
+                <option value="pnl_desc">{t('pnlHigh')}</option>
+                <option value="pnl_asc">{t('pnlLow')}</option>
+                <option value="layer_desc">{t('layerHigh')}</option>
               </select>
             </div>
           </div>
@@ -990,19 +1003,23 @@ export function TradingPositionsView({
           )}
 
           {/* Positions Grid */}
-          <div className="space-y-3">
+          <div className="space-y-3" data-gain-bot-list>
             {filteredPositions.map((pos, idx) => {
-              const currentMode: BotMode = pos.botMode || 'Avarage+Grid';
-              const maxLayers = pos.maxStep || 10;
-              const stepCount = pos.stepLayer || 1;
-              const layerProgressPct = Math.min(100, Math.max(6, (stepCount / maxLayers) * 100));
+              const currentMode: BotMode = normalizeBotMode(pos.botMode);
+              const maxLayers = Math.max(1, Number(pos.maxStep) || 1);
+              const runtimeStep = Math.max(0, Number(pos.stepLayer) || 0);
+              const hasOpenQuantity = Number(pos.totalCoinQty ?? 0) > 0;
+              const filledLayerCount = hasOpenQuantity ? Math.min(maxLayers, Math.max(1, runtimeStep - 1)) : 0;
+              const nextLayerCount = Math.min(maxLayers, filledLayerCount + 1);
+              const stepCount = filledLayerCount;
+              const layerProgressPct = Math.min(100, Math.max(6, ((filledLayerCount || 0) / maxLayers) * 100));
               const isProfit = Number(pos.floatingPnl ?? 0) >= 0;
 
               if (viewMode === 'simple') {
                 return (
                   <div
-                    key={`${pos.id || pos.coin}-${idx}`}
-                    className="p-4 rounded-2xl bg-white dark:bg-[#101A29] border border-slate-200 dark:border-[#1E2E44] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition shadow-xs space-y-3.5"
+                    key={`${pos.botId || pos.id || pos.botName || 'bot'}::${pos.pair}`}
+                    data-gain-bot-card className="p-4 rounded-2xl bg-white dark:bg-[#101A29] border border-slate-200 dark:border-[#1E2E44] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition shadow-xs space-y-3.5"
                   >
                     {/* Top Header: Coin, Name & Simple Status */}
                     <div className="flex items-center justify-between">
@@ -1032,8 +1049,8 @@ export function TradingPositionsView({
                                 }`}
                               />
                               {pos.status === 'active' || pos.status === 'averaging'
-                                ? 'Berjalan Otomatis'
-                                : 'Sedang Dijeda'}
+                                ? t('runningAutomatically')
+                                : t('paused')}
                             </span>
                           </div>
                           <span className="text-[11px] text-slate-500 dark:text-slate-400 font-sans">
@@ -1188,7 +1205,7 @@ export function TradingPositionsView({
 
               return (
                 <div
-                  key={`${pos.id || pos.coin}-${idx}`}
+                  key={`${pos.botId || pos.id || pos.botName || 'bot'}::${pos.pair}`}
                   className="p-4 rounded-2xl bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#1E293B] hover:border-teal-500/40 dark:hover:border-teal-500/30 transition shadow-xs space-y-3"
                 >
                   {/* Top row: Symbol, Bot Specs & OKX-Style Live Price */}
@@ -1240,7 +1257,7 @@ export function TradingPositionsView({
                             {currentMode === 'Avarage Only' && <ArrowDownRight className="w-3 h-3" />}
                             {currentMode === 'Grid Only' && <Split className="w-3 h-3" />}
                             {currentMode === 'Avarage+Grid' && <Maximize2 className="w-3 h-3" />}
-                            <span>{currentMode}</span>
+                            <span>{getBotModeLabel(currentMode, language)}</span>
                           </span>
 
                           <span className="px-2 py-0.5 rounded text-[10px] font-mono tabular-nums bg-slate-100 dark:bg-[#0B121E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#162338]">
@@ -1422,7 +1439,7 @@ export function TradingPositionsView({
                   {/* Trailing progress bar */}
                   <div>
                     <div className="flex items-center justify-between text-[11px] font-mono mb-1 text-slate-500 dark:text-slate-400">
-                      <span>{pos.trailingInfo || `${currentMode} Multiplier Step`}</span>
+                      <span>{pos.trailingInfo || `${getBotModeLabel(currentMode, language)} Multiplier Step`}</span>
                       <span>{pos.trailingProgressPct}%</span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-[#060B14] overflow-hidden">
@@ -1446,7 +1463,7 @@ export function TradingPositionsView({
                         title="Buka rincian detail eksekusi layer (Harga buy, ukuran USD, estimasi TP, Floating PnL)"
                       >
                         <Layers className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                        <span>Detail Layer ({pos.stepLayer || (pos.coin === 'SUI' ? 8 : pos.coin === 'HYPE' ? 2 : 1)})</span>
+                        <span>Detail Layer ({filledLayerCount || nextLayerCount})</span>
                       </button>
 
                       <button

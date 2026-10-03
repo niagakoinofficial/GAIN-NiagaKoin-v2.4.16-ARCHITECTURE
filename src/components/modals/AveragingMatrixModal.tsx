@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import { BUILTIN_STRATEGY_PRESETS, deleteCustomStrategyPreset, loadCustomStrategyPresets, saveCustomStrategyPreset, type StrategyPreset } from '../../utils/strategyPresets';
 import { assessStrategyRisk, STRATEGY_RISK_LIMITS, type StrategyRiskAssessment } from '../../utils/strategyRiskGuardrails';
 import { assessDeploymentPreflight, type DeploymentPreflightAssessment } from '../../utils/deploymentPreflight';
 import { AveragingStep, BotMode, TradingPosition } from '../../types';
+import { getBotModeLabel, normalizeBotMode } from '../../utils/botModeLabels';
 import { CoinLogo } from '../common/CoinLogo';
 import { SUPPORTED_COINS } from '../../data/appData';
 import {
@@ -101,13 +103,14 @@ export function AveragingMatrixModal({
   onOpenSimulation,
   onDeployBot,
 }: AveragingMatrixModalProps) {
+  const { language } = useLanguage();
   // =========================================================================
   // 1. BOT SETTINGS FIRST (Bot Identity & General Strategy)
   // =========================================================================
   const [activeBotId, setActiveBotId] = useState<string | null>(initialBotId || null);
   const [isCreatingNewBot, setIsCreatingNewBot] = useState<boolean>(isNewBot ?? (!initialBotId));
   const [botNameInput, setBotNameInput] = useState<string>(initialBotName || '');
-  const [botMode, setBotMode] = useState<BotMode>(initialMode);
+  const [botMode, setBotMode] = useState<BotMode>(normalizeBotMode(initialMode));
   const [executionMode, setExecutionMode] = useState<'testnet' | 'live'>('testnet');
   const TIMEFRAME_OPTIONS = [
     { value: '3m', label: '3 menit' },
@@ -320,6 +323,8 @@ export function AveragingMatrixModal({
   // Initialize steps
   useEffect(() => {
     if (isOpen) {
+      const resolvedInitialMode = normalizeBotMode(initialMode);
+      setBotMode(resolvedInitialMode);
       const bNum = parseFloat(baseAmount) || 10;
       const avgDNum = parseFloat(averageDownPct) || 2.0;
       const tpNum = parseFloat(baseTp) || 1.5;
@@ -340,7 +345,7 @@ export function AveragingMatrixModal({
 
       setAveragingLayers(initAvg);
       setGridLayers(initGrid);
-      setSteps(generateSteps(initialMode, initAvg, initGrid, bNum, avgDNum, tpNum, gridTpNum, tpCb, layerCb));
+      setSteps(generateSteps(resolvedInitialMode, initAvg, initGrid, bNum, avgDNum, tpNum, gridTpNum, tpCb, layerCb));
     }
   }, [isOpen, initialMode]);
 
@@ -588,6 +593,10 @@ export function AveragingMatrixModal({
   // Handle Save / Deploy Bot to All Paired Coins
   const handleSave = () => {
     if (deploymentPreflight.status === 'BLOCKED') return;
+    if ((botMode === 'Grid Only' || botMode === 'Avarage+Grid') && !(minPriceNum > 0 && maxPriceNum > minPriceNum)) {
+      alert('Mode Grid membutuhkan batas harga yang valid: Min Price > 0 dan Max Price > Min Price. Bot tidak disimpan sampai range Grid lengkap.');
+      return;
+    }
     if (pairedCoins.length === 0) return;
 
     setSavedToast(true);
@@ -813,7 +822,7 @@ export function AveragingMatrixModal({
                   >
                     <div className="flex items-center gap-1">
                       <ArrowDownRight className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span className="text-[11px] font-bold font-sans truncate">Averager</span>
+                      <span className="text-[11px] font-bold font-sans truncate">{getBotModeLabel('Avarage Only', language)}</span>
                     </div>
                     <span className="text-[9px] text-slate-500 dark:text-slate-400 block mt-0.5 font-mono">
                       1-20 Layer
@@ -831,7 +840,7 @@ export function AveragingMatrixModal({
                   >
                     <div className="flex items-center gap-1">
                       <Split className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
-                      <span className="text-[11px] font-bold font-sans truncate">Grid Only</span>
+                      <span className="text-[11px] font-bold font-sans truncate">{getBotModeLabel('Grid Only', language)}</span>
                     </div>
                     <span className="text-[9px] text-slate-500 dark:text-slate-400 block mt-0.5 font-mono">
                       5 default · 1-100 Layer
@@ -849,7 +858,7 @@ export function AveragingMatrixModal({
                   >
                     <div className="flex items-center gap-1">
                       <Maximize2 className="w-3.5 h-3.5 text-teal-600 dark:text-[#00F0C8] shrink-0" />
-                      <span className="text-[11px] font-bold font-sans truncate">Avg+Grid</span>
+                      <span className="text-[11px] font-bold font-sans truncate">{getBotModeLabel('Avarage+Grid', language)}</span>
                     </div>
                     <span className="text-[9px] text-slate-500 dark:text-slate-400 block mt-0.5 font-mono">
                       1L + 5L (6L awal)
@@ -1323,7 +1332,7 @@ export function AveragingMatrixModal({
                   Tabel Matrix Formula Bot
                 </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-teal-500/10 text-teal-700 dark:text-[#00F0C8] border border-teal-500/30 font-bold">
-                  {filteredSteps.length} Layer ({botMode})
+                  {filteredSteps.length} Layer ({getBotModeLabel(botMode, language)})
                 </span>
               </div>
 

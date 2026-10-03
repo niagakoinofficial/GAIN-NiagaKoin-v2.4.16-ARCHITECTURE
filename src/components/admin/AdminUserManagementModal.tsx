@@ -38,11 +38,15 @@ export function AdminUserManagementModal({ isOpen, onClose }: AdminUserManagemen
 
   if (!isOpen) return null;
 
+  const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredMembers = members.filter((m) => {
+    const username = String(m.username ?? '');
+    const memberId = String(m.memberId ?? '');
+    const emailMasked = String(m.emailMasked ?? '');
     const matchesSearch =
-      m.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.memberId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.emailMasked.toLowerCase().includes(searchTerm.toLowerCase());
+      username.toLowerCase().includes(normalizedSearch) ||
+      memberId.toLowerCase().includes(normalizedSearch) ||
+      emailMasked.toLowerCase().includes(normalizedSearch);
     const matchesStatus = filterStatus === 'all' || m.accountStatus === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -136,18 +140,18 @@ export function AdminUserManagementModal({ isOpen, onClose }: AdminUserManagemen
               const isActive = member.accountStatus === 'active';
               return (
                 <div
-                  key={member.memberId}
+                  key={String(member.memberId ?? '-')}
                   className="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-slate-700 transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-amber-400 font-mono shrink-0">
-                      {member.memberId.slice(-3)}
+                      {String(member.memberId ?? '---').slice(-3)}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm">{member.username}</span>
+                        <span className="font-bold text-white text-sm">{String(member.username ?? 'Member')}</span>
                         <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                          {member.memberId}
+                          {String(member.memberId ?? '-')}
                         </span>
                         {member.role === 'admin' && (
                           <span className="text-[9px] text-cyan-300 font-bold bg-cyan-500/20 px-1.5 py-0.5 rounded">
@@ -156,11 +160,11 @@ export function AdminUserManagementModal({ isOpen, onClose }: AdminUserManagemen
                         )}
                       </div>
                       <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                        <span>{member.emailMasked}</span>
+                        <span>{String(member.emailMasked ?? '-')}</span>
                         <span>•</span>
                         <span>Sponsor: {member.sponsorId || 'GAIN Foundation'}</span>
                         <span>•</span>
-                        <span>Bergabung: {member.joinedAt}</span>
+                        <span>Bergabung: {String(member.joinedAt ?? '-')}</span>
                       </div>
                     </div>
                   </div>

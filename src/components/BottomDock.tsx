@@ -1,4 +1,5 @@
 import { NavigationRoute } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 import { Home, Wallet, Bot, LineChart, User } from 'lucide-react';
 
 interface BottomDockProps {
@@ -8,6 +9,7 @@ interface BottomDockProps {
 }
 
 export function BottomDock({ currentRoute, onRouteChange, activePositionsCount = 6 }: BottomDockProps) {
+  const { t } = useLanguage();
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#070C15]/95 border-t border-slate-200 dark:border-[#121E31] backdrop-blur-lg px-1 sm:px-6 py-1.5 sm:py-2 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] dark:shadow-none">
       <div className="max-w-xl mx-auto flex items-center justify-between">
@@ -19,7 +21,7 @@ export function BottomDock({ currentRoute, onRouteChange, activePositionsCount =
           }`}
         >
           <Home className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-medium tracking-wide">Home</span>
+          <span className="text-[10px] font-medium tracking-wide">{t('home')}</span>
           {currentRoute === 'home' && <span className="w-1.5 h-1.5 rounded-full bg-teal-600 dark:bg-[#00F0C8] mt-0.5"></span>}
         </button>
 
@@ -31,7 +33,7 @@ export function BottomDock({ currentRoute, onRouteChange, activePositionsCount =
           }`}
         >
           <Wallet className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-medium tracking-wide">Wallet</span>
+          <span className="text-[10px] font-medium tracking-wide">{t('wallet')}</span>
           {currentRoute === 'wallet' && <span className="w-1.5 h-1.5 rounded-full bg-teal-600 dark:bg-[#00F0C8] mt-0.5"></span>}
         </button>
 
@@ -61,7 +63,7 @@ export function BottomDock({ currentRoute, onRouteChange, activePositionsCount =
           }`}
         >
           <User className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-medium tracking-wide">Akun</span>
+          <span className="text-[10px] font-medium tracking-wide">{t('account')}</span>
           {currentRoute === 'akun' && <span className="w-1.5 h-1.5 rounded-full bg-teal-600 dark:bg-[#00F0C8] mt-0.5"></span>}
         </button>
       </div>

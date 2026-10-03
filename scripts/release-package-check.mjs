@@ -28,7 +28,7 @@ const generatedTreeSafe=(target)=>{
 
 check('package version', pkg.version === '2.4.16', String(pkg.version));
 check('lock version', JSON.parse(fs.readFileSync(path.join(root,'package-lock.json'),'utf8')).version === pkg.version);
-check('no .env in release tree', !exists('.env'));
+check('no .env in release/Git tracking', generatedTreeSafe('.env'), exists('.env') ? 'present locally but ignored by Git' : 'absent from release tree');
 check('node_modules excluded from release/Git tracking', generatedTreeSafe('node_modules'), exists('node_modules') ? 'present locally but ignored by Git' : 'absent from release tree');
 check('dist excluded from release/Git tracking', generatedTreeSafe('dist'), exists('dist') ? 'present locally but ignored by Git' : 'absent from release tree');
 check('no macOS archive metadata', !exists('__MACOSX'));

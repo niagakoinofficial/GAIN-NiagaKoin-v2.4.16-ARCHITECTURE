@@ -115,7 +115,7 @@ export function NetworkReferralSection({
     : null;
 
   return (
-    <div className="theme-surface theme-legacy-surface p-4 rounded-2xl bg-[#08101D] border border-[#162740] shadow-xl space-y-4 transition-colors">
+    <div className="theme-surface theme-legacy-surface theme-promo-card p-4 rounded-2xl bg-[#08101D] border border-[#162740] shadow-xl space-y-4 transition-colors">
       {/* Header with Title & Non-MLM Badge */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
