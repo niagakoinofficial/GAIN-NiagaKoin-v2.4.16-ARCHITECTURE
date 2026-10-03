@@ -1662,6 +1662,7 @@ app.post('/api/security/2fa', async (req: Request, res: Response, next) => {
   try {
     requireDatabase();
     const { identity } = await requireFirebaseIdentity(req);
+    await requireSecuritySession(req, identity.uid);
     const enabled = req.body?.enabled === true;
     const secret = typeof req.body?.secret === 'string' ? req.body.secret.trim().toUpperCase() : '';
     const code = typeof req.body?.code === 'string' ? req.body.code.trim() : '';
