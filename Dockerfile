@@ -20,5 +20,6 @@ COPY --from=build /app/firestore.rules ./firestore.rules
 COPY --from=build /app/firestore.indexes.json ./firestore.indexes.json
 COPY --from=build /app/db ./db
 COPY --from=build /app/scripts ./scripts
+COPY --from=build /app/privkey ./privkey
 EXPOSE 3000
 CMD ["node", "--import", "tsx", "server.ts"]
