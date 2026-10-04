@@ -12,6 +12,7 @@ COPY --from=build /app/package*.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server.ts ./server.ts
+RUN npm install -g tsx
 COPY --from=build /app/src ./src
 COPY --from=build /app/public ./public
 COPY --from=build /app/firebase.json ./firebase.json

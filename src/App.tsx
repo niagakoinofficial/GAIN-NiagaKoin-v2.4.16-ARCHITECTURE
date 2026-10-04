@@ -1122,12 +1122,12 @@ function AppContent() {
         ? [wallet.connectedExchange]
         : [];
 
-    const targetConfig = existingList.find((c) => c.exchange === targetExchange);
+    const targetConfig = existingList.find((c) => c.exchange.toLowerCase() === targetExchange.toLowerCase());
 
     if (targetConfig) {
       const updatedList = existingList.map((c) => ({
         ...c,
-        isActive: c.exchange === targetExchange,
+        isActive: c.exchange.toLowerCase() === targetExchange.toLowerCase(),
       }));
 
       setWallet((prev) => ({

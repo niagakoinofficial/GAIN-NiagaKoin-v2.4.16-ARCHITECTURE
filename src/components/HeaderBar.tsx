@@ -90,7 +90,7 @@ export function HeaderBar({
       : connectedExchange?.isConnected
       ? [connectedExchange]
       : [];
-  const connectedMap = new Map(activeConnectedList.map((c) => [c.exchange, c]));
+  const connectedMap = new Map(activeConnectedList.map((c) => [c.exchange.toLowerCase(), c]));
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -357,7 +357,7 @@ export function HeaderBar({
           >
             <span
               className={`w-2 h-2 rounded-full shrink-0 ${
-                connectedMap.has(currentExchange)
+                connectedMap.has(currentExchange.toLowerCase())
                   ? 'bg-emerald-500 shadow-xs'
                   : 'bg-slate-400'
               }`}
@@ -365,8 +365,8 @@ export function HeaderBar({
             <span className="truncate">
               {currentExchange}
               <span className="hidden sm:inline text-slate-500 dark:text-slate-400 font-normal">
-                {connectedMap.get(currentExchange)
-                  ? connectedMap.get(currentExchange)?.isSandbox
+                {connectedMap.get(currentExchange.toLowerCase())
+                  ? connectedMap.get(currentExchange.toLowerCase())?.isSandbox
                     ? ' (Testnet)'
                     : ' (Live)'
                   : ''}
@@ -397,7 +397,7 @@ export function HeaderBar({
                   </span>
                 </div>
                 {exchanges.map((ex) => {
-                  const conn = connectedMap.get(ex);
+                  const conn = connectedMap.get(ex.toLowerCase());
                   const isCurrent = currentExchange === ex;
                   return (
                     <button
